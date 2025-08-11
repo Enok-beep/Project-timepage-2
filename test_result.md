@@ -195,6 +195,13 @@
   test_all: false
   test_priority: "high_first"
 
+  current_focus:
+    - "GET /api/preferences (load: session restore)"
+    - "POST /api/notify (rate limit 1/min per IP & email)"
+    - "GET /api/admin/emails (list export)"
+  test_all: false
+  test_priority: "high_first"
+
 ## agent_communication:
   - agent: "main"
     message: "Please run backend API tests against /api/palettes, /api/preferences, /api/notify. Ensure DB seed, upsert semantics, and error cases (404 on bad palette, 422 invalid email)."
