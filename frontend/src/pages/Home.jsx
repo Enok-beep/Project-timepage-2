@@ -6,12 +6,10 @@ import { Card, CardContent } from "../components/ui/card";
 import { Separator } from "../components/ui/separator";
 import { Input } from "../components/ui/input";
 import * as Icons from "lucide-react";
-import { getPalettes, savePreference, notifyEmail } from "../lib/api";
+import { getPalettes, savePreference, notifyEmail, getPreference } from "../lib/api";
 import { useToast } from "../hooks/use-toast";
 
-function loadInitialTheme() {
-  const saved = localStorage.getItem("timepage_theme");
-  const theme = saved ? JSON.parse(saved) : mockPalettes[0];
+function applyThemeVars(theme) {
   const root = document.documentElement;
   root.style.setProperty("--msk-color-base", theme.baseColor);
   root.style.setProperty("--msk-bg-base", theme.baseBg);
@@ -19,6 +17,12 @@ function loadInitialTheme() {
   root.style.setProperty("--msk-bg", theme.bg);
   root.style.setProperty("--msk-accent", theme.accent);
   root.style.setProperty("--msk-subtle", theme.subtle);
+}
+
+function loadInitialTheme() {
+  const saved = localStorage.getItem("timepage_theme");
+  const theme = saved ? JSON.parse(saved) : mockPalettes[0];
+  applyThemeVars(theme);
 }
 
 export default function Home() {
@@ -42,6 +46,25 @@ export default function Home() {
     })();
   }, []);
 
+  // Restore server-saved preference if available
+  useEffect(() => {
+    (async () => {
+      try {
+        const sid = localStorage.getItem("tp_session_id");
+        if (!sid) return;
+        const pref = await getPreference(sid);
+        const list = palettes.length ? palettes : mockPalettes;
+        const p = list.find((x) => x.id === pref.palette_id);
+        if (p) {
+          applyThemeVars(p);
+          localStorage.setItem("timepage_theme", JSON.stringify(p));
+        }
+      } catch (e) {
+        // ignore and keep local theme
+      }
+    })();
+  }, [palettes]);
+
   const onApplyPersist = async (palette) => {
     try {
       const existingSession = localStorage.getItem("tp_session_id");
@@ -61,14 +84,18 @@ export default function Home() {
       setEmail("");
       toast({ title: "Thanks!", description: "We'll keep you posted." });
     } catch (err) {
-      toast({ title: "Oops", description: "Could not save your email. Try again later." });
+      if (err?.response?.status === 429) {
+        toast({ title: "Slow down", description: "You can send one request per minute.", variant: "destructive" });
+      } else {
+        toast({ title: "Oops", description: "Could not save your email. Try again later." });
+      }
     }
   };
 
   return (
     <div className="min-h-screen" style={{ background: "var(--msk-bg)", color: "var(--msk-color)" }}>
       <header className="sticky top-0 z-30 backdrop-blur-md" style={{ background: "color-mix(in srgb, var(--msk-bg) 85%, transparent)" }}>
-        <div className="mx-auto max-w-6xl px-5 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-5 section-pad-y flex items-center justify-between">
           <div className="flex items-center gap-2 select-none">
             <div className="h-5 w-5 rounded-sm" style={{ background: "var(--msk-accent)" }} />
             <span className="text-sm tracking-wide">Timepage Clone</span>
@@ -88,8 +115,8 @@ export default function Home() {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto max-w-6xl px-5 pt-14 pb-12 md:pt-24 md:pb-16">
-          <h1 className="leading-tight font-semibold" style={{ fontSize: "min(6vh, min(7vw, 56px))" }}>
+        <section className="mx-auto max-w-6xl px-5" style={{ paddingBlock: "clamp(16px, 4vw, 80px)" }}>
+          <h1 className="leading-tight font-semibold" style={{ fontSize: "min(4vh, min(5vw, 28px))" }}>
             {microcopy.heroHeading}
           </h1>
           <p className="mt-3 text-[15px] md:text-base opacity-80 max-w-2xl">
@@ -139,14 +166,14 @@ export default function Home() {
         <Separator />
 
         {/* Features */}
-        <section id="features" className="mx-auto max-w-6xl px-5 pt-12 pb-8 md:pt-16 md:pb-12">
+        <section id="features" className="mx-auto max-w-6xl px-5" style={{ paddingBlock: "clamp(16px, 4vw, 80px)" }}>
           <h2 className="text-[min(4vh,_min(5vw,_28px))] font-semibold tracking-tight">Designed for clarity</h2>
           <p className="mt-2 text-sm md:text-base opacity-80 max-w-2xl">Micro-animations, responsive typography and a color system that adapts to your context.</p>
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f) => {
               const Icon = Icons[f.icon] || Icons.Sparkles;
               return (
-                <Card key={f.id} className="transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <Card key={f.id} className="tp-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-md flex items-center justify-center" style={{ background: "var(--msk-accent)", color: "#fff" }}>
@@ -165,14 +192,14 @@ export default function Home() {
         <Separator />
 
         {/* Theme Picker */}
-        <section className="mx-auto max-w-6xl px-5 pt-12 pb-16 md:pt-16 md:pb-24">
+        <section className="mx-auto max-w-6xl px-5" style={{ paddingBlock: "clamp(16px, 4vw, 80px)" }}>
           <ThemePicker palettesData={palettes} onApplied={onApplyPersist} />
         </section>
 
         <Separator />
 
         {/* Download section (mock) */}
-        <section id="download" className="mx-auto max-w-6xl px-5 pt-12 pb-16 md:pt-16 md:pb-24">
+        <section id="download" className="mx-auto max-w-6xl px-5" style={{ paddingBlock: "clamp(16px, 4vw, 80px)" }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="col-span-2">
               <h2 className="text-[min(4vh,_min(5vw,_28px))] font-semibold tracking-tight">Coming soon</h2>
@@ -200,7 +227,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t" style={{ borderColor: "var(--border)" }}>
-        <div className="mx-auto max-w-6xl px-5 py-10 text-sm opacity-80">
+        <div className="mx-auto max-w-6xl px-5" style={{ paddingBlock: "clamp(16px, 4vw, 80px)" }}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-2 select-none">
               <div className="h-4 w-4 rounded-sm" style={{ background: "var(--msk-accent)" }} />

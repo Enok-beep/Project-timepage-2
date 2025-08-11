@@ -92,5 +92,14 @@ code {
     @apply bg-background text-foreground;
     background: var(--msk-bg);
     color: var(--msk-color);
+    transition: background-color .4s ease, color .3s ease, border-color .3s ease;
     }
+  .tp-card, header, footer {
+    transition: background-color .4s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+}
+
+/* Progressive spacing utility for sections */
+.section-pad-y {
+  padding-block: clamp(16px, 4vw, 80px);
 }

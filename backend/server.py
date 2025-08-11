@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Query
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,7 +8,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+from pymongo.errors import DuplicateKeyError
 
 
 ROOT_DIR = Path(__file__).parent
@@ -60,9 +61,14 @@ class PreferenceOut(BaseModel):
 class NotifyIn(BaseModel):
     email: EmailStr
 
+class EmailOut(BaseModel):
+    email: EmailStr
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
 
 # ----------------------
-# Seed Palettes
+# Seed Palettes and Indexes
 # ----------------------
 CURATED_PALETTES: List[Palette] = [
     Palette(id="arctic", name="Arctic", bg="#F5F7F9", color="#191e22", baseBg="#000000", baseColor="#ffffff", accent="#2a454c", subtle="#637281"),
@@ -81,6 +87,8 @@ async def ensure_indexes_and_seed():
     await db.preferences.create_index("session_id", unique=True)
     await db.notify_emails.create_index("email", unique=True)
     await db.palettes.create_index("id", unique=True)
+    # TTL for rate limits
+    await db.rate_limits.create_index("expireAt", expireAfterSeconds=0)
 
     # Seed palettes if empty
     count = await db.palettes.count_documents({})
@@ -118,7 +126,7 @@ async def get_status_checks():
 
 
 # ----------------------
-# New Routes
+# New/Updated Routes
 # ----------------------
 @api_router.get("/palettes", response_model=List[Palette])
 async def get_palettes():
@@ -141,8 +149,43 @@ async def save_preference(body: PreferenceIn):
     )
     return PreferenceOut(session_id=session_id, palette_id=body.palette_id, updated_at=now)
 
+@api_router.get("/preferences", response_model=PreferenceOut)
+async def load_preference(session_id: str = Query(...)):
+    pref = await db.preferences.find_one({"session_id": session_id})
+    if not pref:
+        raise HTTPException(status_code=404, detail="Preference not found")
+    return PreferenceOut(session_id=pref["session_id"], palette_id=pref["palette_id"], updated_at=pref.get("updated_at", datetime.utcnow()))
+
+
+def _client_ip(request: Request) -> str:
+    # Prefer X-Forwarded-For (K8s/Ingress) then fall back to client host
+    xff = request.headers.get("x-forwarded-for") or request.headers.get("X-Forwarded-For")
+    if xff:
+        # get first IP in the list
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+async def _rate_limit(key: str, window_seconds: int = 60):
+    now = datetime.utcnow()
+    expire_at = now + timedelta(seconds=window_seconds)
+    try:
+        await db.rate_limits.insert_one({"_id": key, "expireAt": expire_at})
+        return True
+    except DuplicateKeyError:
+        return False
+
 @api_router.post("/notify")
-async def notify(body: NotifyIn):
+async def notify(body: NotifyIn, request: Request):
+    # Rate limit: 1/min per IP and per email
+    ip = _client_ip(request)
+    email_key = f"notify:email:{body.email.lower()}"
+    ip_key = f"notify:ip:{ip}"
+
+    ok_email = await _rate_limit(email_key, 60)
+    ok_ip = await _rate_limit(ip_key, 60)
+    if not (ok_email and ok_ip):
+        raise HTTPException(status_code=429, detail="Too many requests. Please try again in a minute.")
+
     now = datetime.utcnow()
     await db.notify_emails.update_one(
         {"email": body.email},
@@ -150,6 +193,11 @@ async def notify(body: NotifyIn):
         upsert=True,
     )
     return {"status": "ok"}
+
+@api_router.get("/admin/emails", response_model=List[EmailOut])
+async def admin_list_emails():
+    items = await db.notify_emails.find({}, {"_id": 0}).to_list(10000)
+    return [EmailOut(**item) for item in items]
 
 
 # Include the router in the main app

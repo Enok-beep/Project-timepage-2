@@ -16,6 +16,11 @@ export const savePreference = async ({ sessionId, paletteId }) => {
   return data; // { session_id, palette_id, updated_at }
 };
 
+export const getPreference = async (sessionId) => {
+  const { data } = await axios.get(`${API}/preferences`, { params: { session_id: sessionId } });
+  return data; // { session_id, palette_id, updated_at }
+};
+
 export const notifyEmail = async (email) => {
   const { data } = await axios.post(`${API}/notify`, { email });
   return data; // { status: "ok" }
