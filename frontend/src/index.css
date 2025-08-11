@@ -1,10 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
         "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
         "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -16,7 +18,15 @@ code {
         monospace;
 }
 
-
+:root {
+  /* Timepage-style theme variables */
+  --msk-color-base: #ffffff;
+  --msk-bg-base: #000000;
+  --msk-color: #191e22; /* primary text */
+  --msk-bg: rgb(245,247,249); /* primary background */
+  --msk-accent: #2a454c; /* accent elements */
+  --msk-subtle: #637281; /* secondary text */
+}
 
 @layer base {
   :root {
@@ -74,13 +84,13 @@ code {
     }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
     }
   body {
     @apply bg-background text-foreground;
+    background: var(--msk-bg);
+    color: var(--msk-color);
     }
 }
