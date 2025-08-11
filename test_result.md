@@ -183,6 +183,40 @@
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
+  - task: "Restore theme on load from server preference"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Home.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added GET /api/preferences restore flow keyed by tp_session_id with graceful fallback to local theme."
+  - task: "Add Toaster component globally"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Mounted <Toaster /> so toasts appear after theme save and notify actions."
+  - task: "Fluid typography, smooth theme transitions, progressive spacing"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/index.css"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Applied min()/clamp() typography and spacing; added CSS transitions on color/background/border for Timepage-like smoothness."
+
     status_history:
       - working: true
         agent: "main"
