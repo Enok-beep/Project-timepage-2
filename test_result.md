@@ -267,7 +267,11 @@
   run_ui: false
 
 ## test_plan:
-  current_focus: []
+  current_focus:
+    - "Frontend: Apply theme -> toast appears and session saved"
+    - "Frontend: Refresh -> GET /api/preferences restores palette"
+    - "Frontend: Notify form -> success toast then 429 toast within 60s"
+    - "Frontend: Toaster mounted globally"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
