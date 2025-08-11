@@ -154,33 +154,42 @@
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Implemented GET /api/preferences?session_id=... returning session_id, palette_id, updated_at."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All 7 tests passed. Case A: Existing session_id returns 200 with correct {session_id, palette_id, updated_at} structure. Case B: Non-existent session_id returns 404 with 'Preference not found' detail. Endpoint working correctly."
   - task: "Rate limit /api/notify"
     implemented: true
     working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added token bucket via Mongo unique keys with TTL collection. 1 request/min per IP and per email. Returns 429 when exceeded."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All 5 rate limiting tests passed. Case A: First POST with 'demo@example.com' returns 200 {'status': 'ok'}. Case B: Second POST within 60s returns 429 (per-email limit). Case C: Different email from same IP returns 429 (per-IP limit). Case E: Invalid email returns 422. Rate limiting working correctly with 1 req/min per IP and per email."
   - task: "GET /api/admin/emails"
     implemented: true
     working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Minimal admin list (no auth yet) returning JSON array of emails with timestamps."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All 6 tests passed. Returns 200 with JSON array containing emails with required fields {email, created_at, updated_at}. Found 2 emails in database with valid email formats and proper timestamps. Endpoint working correctly."
 
 ## frontend:
   - task: "Fetch palettes and display"
