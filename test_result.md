@@ -107,37 +107,46 @@
 ## backend:
   - task: "GET /api/palettes"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Implemented endpoint, seeded curated palettes on startup with indexes."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All 6 tests passed. Returns 9 curated palettes with correct structure (id, name, bg, color, baseBg, baseColor, accent, subtle). All expected palette IDs present: arctic, azure, indigo, scarlet, mandarin, mint, forest, charcoal, sand. Response format and data types validated."
   - task: "POST /api/preferences"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Upsert by session_id with validation for palette existence; returns session_id and updated_at."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All 9 tests passed. Case A: Creates new preference with generated session_id, returns correct palette_id and ISO timestamp. Case B: Updates existing session with new palette_id, maintains same session_id. Case C: Returns 404 with 'Palette not found' for invalid palette_id. All upsert semantics working correctly."
   - task: "POST /api/notify"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Upsert email with created_at/updated_at timestamps and unique index."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All 11 tests passed. Case A: Valid email returns 200 with {'status': 'ok'}. Case B: Repeat email still returns 200 (upsert working). Case C: Invalid email formats (invalid-email, test@, @example.com, test.example.com, empty) all return 422 validation errors as expected."
 
 ## frontend:
   - task: "Fetch palettes and display"
