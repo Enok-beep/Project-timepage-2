@@ -48,8 +48,8 @@ export default function ThemePicker({ onApplied }) {
             <TooltipProvider key={p.id}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Card
-                    className={`relative transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
+                  <Card data-testid={`palette-card-${p.id}`}
+                    className={`tp-card relative transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                       isActive ? "ring-2 ring-[var(--msk-accent)]" : "ring-1 ring-border"
                     }`}
                     onClick={() => handleApply(p)}
