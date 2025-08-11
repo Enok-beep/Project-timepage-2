@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { palettes } from "../mock";
+import { palettes as mockPalettes } from "../mock";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
 import { Button } from "../components/ui/button";
@@ -15,14 +15,16 @@ function applyThemeVars(theme) {
   root.style.setProperty("--msk-subtle", theme.subtle);
 }
 
-export default function ThemePicker({ onApplied }) {
-  const [active, setActive] = useState(() => {
+export default function ThemePicker({ palettesData, onApplied }) {
+  const initial = () => {
     const saved = localStorage.getItem("timepage_theme");
-    return saved ? JSON.parse(saved) : palettes[0];
-  });
+    return saved ? JSON.parse(saved) : (palettesData?.[0] || mockPalettes[0]);
+  };
+  const [active, setActive] = useState(initial);
 
   useEffect(() => {
     applyThemeVars(active);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleApply = (p) => {
@@ -32,7 +34,8 @@ export default function ThemePicker({ onApplied }) {
     onApplied?.(p);
   };
 
-  const gridCols = useMemo(() => (palettes.length > 6 ? "grid-cols-3 md:grid-cols-6" : "grid-cols-3 md:grid-cols-4"), []);
+  const list = palettesData?.length ? palettesData : mockPalettes;
+  const gridCols = useMemo(() => (list.length > 6 ? "grid-cols-3 md:grid-cols-6" : "grid-cols-3 md:grid-cols-4"), [list.length]);
 
   return (
     <section id="themes" className="w-full">
@@ -42,7 +45,7 @@ export default function ThemePicker({ onApplied }) {
       </div>
 
       <div className={`grid ${gridCols} gap-4`}>
-        {palettes.map((p) => {
+        {list.map((p) => {
           const isActive = p.id === active.id;
           return (
             <TooltipProvider key={p.id}>

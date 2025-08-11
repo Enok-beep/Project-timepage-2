@@ -1,14 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ThemePicker from "../components/ThemePicker";
-import { features, microcopy, palettes } from "../mock";
+import { features, microcopy, palettes as mockPalettes } from "../mock";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Separator } from "../components/ui/separator";
+import { Input } from "../components/ui/input";
 import * as Icons from "lucide-react";
+import { getPalettes, savePreference, notifyEmail } from "../lib/api";
+import { useToast } from "../hooks/use-toast";
 
 function loadInitialTheme() {
   const saved = localStorage.getItem("timepage_theme");
-  const theme = saved ? JSON.parse(saved) : palettes[0];
+  const theme = saved ? JSON.parse(saved) : mockPalettes[0];
   const root = document.documentElement;
   root.style.setProperty("--msk-color-base", theme.baseColor);
   root.style.setProperty("--msk-bg-base", theme.baseBg);
@@ -19,9 +22,48 @@ function loadInitialTheme() {
 }
 
 export default function Home() {
+  const { toast } = useToast();
+  const [palettes, setPalettes] = useState([]);
+  const [email, setEmail] = useState("");
+
   useEffect(() => {
     loadInitialTheme();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getPalettes();
+        if (Array.isArray(data) && data.length) setPalettes(data);
+        else setPalettes(mockPalettes);
+      } catch (e) {
+        setPalettes(mockPalettes);
+      }
+    })();
+  }, []);
+
+  const onApplyPersist = async (palette) => {
+    try {
+      const existingSession = localStorage.getItem("tp_session_id");
+      const res = await savePreference({ sessionId: existingSession || undefined, paletteId: palette.id });
+      localStorage.setItem("tp_session_id", res.session_id);
+      toast({ title: "Theme saved", description: `Applied ${palette.name} for your session.` });
+    } catch (e) {
+      toast({ title: "Saved locally", description: "Backend unreachable. We'll sync next time.", });
+    }
+  };
+
+  const onNotify = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      await notifyEmail(email);
+      setEmail("");
+      toast({ title: "Thanks!", description: "We'll keep you posted." });
+    } catch (err) {
+      toast({ title: "Oops", description: "Could not save your email. Try again later." });
+    }
+  };
 
   return (
     <div className="min-h-screen" style={{ background: "var(--msk-bg)", color: "var(--msk-color)" }}>
@@ -124,7 +166,7 @@ export default function Home() {
 
         {/* Theme Picker */}
         <section className="mx-auto max-w-6xl px-5 pt-12 pb-16 md:pt-16 md:pb-24">
-          <ThemePicker />
+          <ThemePicker palettesData={palettes} onApplied={onApplyPersist} />
         </section>
 
         <Separator />
@@ -135,18 +177,21 @@ export default function Home() {
             <div className="col-span-2">
               <h2 className="text-[min(4vh,_min(5vw,_28px))] font-semibold tracking-tight">Coming soon</h2>
               <p className="mt-2 text-sm md:text-base opacity-80 max-w-2xl">This replica uses mocked content and a local theme system. We can wire up real product links and content next.</p>
-              <div className="mt-6 flex items-center gap-3">
-                <Button className="rounded-md" style={{ background: "var(--msk-accent)", color: "#fff" }}>Notify me</Button>
-                <Button variant="secondary" className="rounded-md">Learn more</Button>
-              </div>
+              <form className="mt-6 flex items-center gap-3" onSubmit={onNotify}>
+                <div className="w-full max-w-xs">
+                  <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <Button className="rounded-md" style={{ background: "var(--msk-accent)", color: "#fff" }} type="submit">Notify me</Button>
+                <Button variant="secondary" className="rounded-md" type="button">Learn more</Button>
+              </form>
             </div>
             <div className="md:justify-self-end">
               <div className="rounded-lg border p-5 text-sm" style={{ background: "#fff", color: "var(--msk-color)" }}>
                 <div className="opacity-70">Mock data</div>
                 <ul className="mt-2 list-disc pl-4 space-y-1 opacity-80">
-                  <li>Palettes are curated examples</li>
-                  <li>No backend yet for themes</li>
-                  <li>UI matches Timepage style patterns</li>
+                  <li>Palettes seeded in DB on backend</li>
+                  <li>Preferences saved per session</li>
+                  <li>Emails captured server-side</li>
                 </ul>
               </div>
             </div>
