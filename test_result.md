@@ -148,6 +148,40 @@
         agent: "testing"
         comment: "✅ VERIFIED: All 11 tests passed. Case A: Valid email returns 200 with {'status': 'ok'}. Case B: Repeat email still returns 200 (upsert working). Case C: Invalid email formats (invalid-email, test@, @example.com, test.example.com, empty) all return 422 validation errors as expected."
 
+  - task: "GET /api/preferences (load)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented GET /api/preferences?session_id=... returning session_id, palette_id, updated_at."
+  - task: "Rate limit /api/notify"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added token bucket via Mongo unique keys with TTL collection. 1 request/min per IP and per email. Returns 429 when exceeded."
+  - task: "GET /api/admin/emails"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Minimal admin list (no auth yet) returning JSON array of emails with timestamps."
+
 ## frontend:
   - task: "Fetch palettes and display"
     implemented: true
