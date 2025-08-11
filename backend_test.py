@@ -614,6 +614,11 @@ def main():
     test_post_preferences(test_results)
     test_post_notify(test_results)
     
+    # Run new tests for the review request
+    test_get_preferences(test_results)
+    test_post_notify_rate_limiting(test_results)
+    test_get_admin_emails(test_results)
+    
     # Print summary
     test_results.summary()
     
